@@ -13,6 +13,58 @@
       background-color: aquamarine;
       position: relative;
     }
+    .loading{ 
+      width: 100vw;
+      height: 100vh;
+      background-color: #000;
+      color: #fff;
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 0;
+    }
+    .loading .loadingCtx {
+      margin-left: 50%;
+      margin-top: 50%;
+      transform: translate(-50%,-50%);
+      animation: loadingCtx 3s infinite ;
+      -moz-animation: loadingCtx 3s infinite;	/* Firefox */
+      -webkit-animation: loadingCtx 3s infinite;	/* Safari 和 Chrome */
+      -o-animation: loadingCtx 3s infinite;	/* Opera */
+      white-space:nowrap;
+      overflow: hidden;
+    }
+    @keyframes loadingCtx
+      {
+      0%   {width: 48px;}
+      25%  {width:52px;}
+      50%  {width: 56px;}
+      100% {width: 62px;}
+      }
+      
+      @-moz-keyframes loadingCtx /* Firefox */
+      {
+        0%   {width: 48px;}
+      25%  {width:52px;}
+      50%  {width: 56px;}
+      100% {width: 62px;}
+      }
+      
+      @-webkit-keyframes loadingCtx /* Safari 和 Chrome */
+      {
+        0%   {width: 48px;}
+      25%  {width:52px;}
+      50%  {width: 56px;}
+      100% {width: 62px;}
+      }
+      
+      @-o-keyframes loadingCtx /* Opera */
+      {
+        0%   {width: 48px;}
+      25%  {width:52px;}
+      50%  {width: 56px;}
+      100% {width: 62px;}
+      }
     .map{
       margin-left: 50px;
       margin-top: 20px;
@@ -120,6 +172,9 @@
       <div class="chatInputTip">按ESC取消对话框</div>
     </div>
   </div> 
+  <div id="loading" class="loading">
+    <div class="loadingCtx">加载中...</div>
+  </div>
 <script src="main.js"></script>
 </body>
 </html>
