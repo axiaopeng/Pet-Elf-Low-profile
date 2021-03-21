@@ -1,92 +1,118 @@
-window.onload = function(){
+window.onload = async function(){
 
   //(args1, args2), y轴起点, y轴层数
-  let limitArea = [{
-    area: [ 0, 40, 20, 30],
-    backgroundColor: "#fff"
-  }, {
-    area: [ 80, 100, 20, 10],
-    backgroundColor: "#eee"
-  }, {
-    area: [ 240, 180, 50, 100],
-    backgroundColor: "blue"
-  }, {
-    area: [ 400, 400, 200, 100],
-    backgroundColor: "red"
-  }, {
-    area: [ 600, 100, 50, 50],
-    backgroundColor: "#e3e3e3"
-  }, {
-    area: [ 400, 100, 90, 50],
-    backgroundColor: "#e3e3e3"
-  }, {
-    area: [ 500, 100, 40, 50],
-    backgroundColor: "#e3e3e3"
-  }, {
-    area: [ 50, 300, 50, 100],
-    backgroundColor: "#e3e3e3"
-  }, {
-    area: [ 150, 400, 200, 80],
-    backgroundColor: "#e3e3e3"
-  }];
-  let gl = new globalCreate({limitArea})
-//初始化人物数据格式
-  let newRole = { 
-    name: '卓泽鹏',
-    positionX: 100,
-    positionY: 200,
-    limitArea: limitArea.map(item => item.area)
+  let globalConfig = {
+    limitArea:[{
+      area: [ 0, 40, 20, 30],
+      backgroundColor: "#fff"
+    }, {
+      area: [ 80, 100, 20, 10],
+      backgroundColor: "#eee"
+    }, {
+      area: [ 240, 180, 50, 100],
+      backgroundColor: "blue"
+    }, {
+      area: [ 400, 400, 200, 100],
+      backgroundColor: "red"
+    }, {
+      area: [ 600, 100, 50, 50],
+      backgroundColor: "#e3e3e3"
+    }, {
+      area: [ 400, 100, 90, 50],
+      backgroundColor: "#e3e3e3"
+    }, {
+      area: [ 500, 100, 40, 50],
+      backgroundColor: "#e3e3e3"
+    }, {
+      area: [ 50, 300, 50, 100],
+      backgroundColor: "#e3e3e3"
+    }, {
+      area: [ 150, 400, 200, 80],
+      backgroundColor: "#e3e3e3"
+    }],
+    entrance: [{
+      area: [540,100,60,50],
+      backgroundColor: '#000',
+    },{
+      area: [1000,600,50,50],
+      backgroundColor: '#eee',
+    }]
   }
+  this.gl = new globalCreate(globalConfig)
+  //初始化 当前用户 人物数据 
+  let myself = initMyself(); //目前未返回对象
   let newRole2 = {
     name: '傻密',
     positionX: 150,
     positionY: 250
   }
-  let myself = new roleCreate(newRole)
-  let roleObj2 = new roleCreate(newRole2)
+  //生成其他角色
+  new roleCreate(newRole2)
   let moveControl = true  //控制移动频率
 
 
-  window.addEventListener('keydown',function(e){ 
-    //对话输入框 
-    let box = document.querySelector('#chatInputBox')
-    //控制人物模块监听， 使用了 key 37、38、39、40
-    if(moveControl){
-      moveControl = false
-      this.setTimeout(() => {
-        switch(e.keyCode){
-          case 37:
-            myself.move('left')
-            break; 
-          case 38:
-            myself.move('up')
-            break;
-          case 39:
-            myself.move('right')
-            break;
-          case 40:
-            myself.move('down')
-            break;              
-        }
-        moveControl = true
-      },100)
+
+  //初始化 当前用户 人物数据、人物事件 ,先决条件 globalConfig.limitArea 存在 
+  async function initMyself(){
+    let myself = null; 
+    let res = await Fetch({
+      url: '/user/myself',
+      method: 'POST',
+      body:{
+        userCreds: sessionStorage.getItem('userCreds')
+      }
+    })
+    if(res.status === 10002){
+      myself = new roleCreate({
+        ...res.data,
+        limitArea: globalConfig.limitArea.map(item => item.area)  //可以每个地图重新赋值,减少编译器压力
+      })
     }
-    //控制对话框  Ctrl + Enter   
-    if(13 === e.keyCode && e.ctrlKey){
-      myself.status = 1;   //开启对话状态
-      box.style.display = 'block';
-      box.children[0].focus();
-    }
-    // 按ESC
-    if(27 === e.keyCode){
-      myself.status = 0;
-      box.style.display = 'none'
-    }
-    //发送信息   shift+enter
-    if(13 === e.keyCode && e.shiftKey){
-      myself.dialogBox();
-    }
-  })
+
+    //当前人物键盘按下事件keydown初始化
+    window.addEventListener('keydown',function(e){ 
+      //对话输入框 
+      let box = document.querySelector('#chatInputBox')
+      //控制人物模块监听， 使用了 key 37、38、39、40
+      if(moveControl){
+        moveControl = false
+        this.setTimeout(() => {
+          switch(e.keyCode){
+            case 37:
+              myself.move('left')
+              break; 
+            case 38:
+              myself.move('up')
+              break;
+            case 39:
+              myself.move('right')
+              break;
+            case 40:
+              myself.move('down')
+              break;              
+          }
+          moveControl = true
+        },100)
+      }
+      //控制对话框  Ctrl + Enter   
+      if(13 === e.keyCode && e.ctrlKey){
+        myself.status = 1;   //开启对话状态
+        box.style.display = 'block';
+        box.children[0].focus();
+      }
+      // 按ESC
+      if(27 === e.keyCode){
+        myself.status = 0; //恢复普通状态
+        box.style.display = 'none'
+      }
+      //发送信息   shift+enter
+      if(13 === e.keyCode && e.shiftKey){
+        myself.dialogBox();
+      }
+    })
+
+    return myself
+  }
 }
 
 //角色构造函数
@@ -104,7 +130,7 @@ roleCreate.prototype = {
   //初始化
   init:function(){
     this.role = document.createElement('div')
-    this.role.style = `position: absolute;top:${this.positionY}px;left:${this.positionX}px;width:48px;height:42px; background:url(../roleImg/${parseInt(Math.ceil(Math.random()*7))}.png) no-repeat;background-position:0 0`
+    this.role.style = `position: absolute;top:${this.positionY}px;left:${this.positionX}px;width:48px;height:42px; background:url(./roleImg/${parseInt(Math.ceil(Math.random()*7))}.png) no-repeat;background-position:0 0`
     let nameDiv = document.createElement('div')
     nameDiv.innerText = this.name
     nameDiv.style = `width: 80px;text-align: center;position:absolute;top:-15px;font-size: 12px;left:-16px`
@@ -125,14 +151,26 @@ roleCreate.prototype = {
     this.moveSpeedY = 8      //精灵图Y轴移动间距
     this.lastMove = 'down'   //第一次默认上次触发
     this.moveNum = 0         //第一次默认触发次数
-    Object.defineProperties(this,{   //监听X\Y坐标
+    //监听角色坐标 关联到 下副地图入口
+    Object.defineProperties(this,{   
       'positionX':{
         configurable:true,//属性可配置
         set: function(v){
           this._positionX = v;
-          //测试可以成功在这里更改样式,在这里进行页面跳转
-          if(this.positionX>540&&this.positionY<150){
-            map.style.backgroundColor="#000"
+         //在这里进行页面跳转
+          window.gl.entrance.some(item => {
+            if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
+              document.querySelector('#loading').style.display= 'block'
+            }
+          })
+         // 在这里进行地图移动X
+          if(this.positionX-window.gl.mapX > 700){  //往右走
+            window.gl.mapX += this.moveSpeedX
+            map.style.marginLeft = -window.gl.mapX +"px"
+          }  
+          if(this.positionX - window.gl.mapX < 100){   //往左走
+            window.gl.mapX -= this.moveSpeedX
+            map.style.marginLeft = -window.gl.mapX +"px"
           }
         },
         get: function(){
@@ -142,8 +180,22 @@ roleCreate.prototype = {
       "positionY":{
         configurable:true,//属性可配置
         set: function(v){
-          console.log(v)
           this._positionY = v;
+        //在这里进行页面跳转
+          window.gl.entrance.some(item => {
+            if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
+              document.querySelector('#loading').style.display= 'block'
+            }
+          })
+        // 在这里进行地图移动
+          if(this.positionY-window.gl.mapY>500){  //往下走
+            window.gl.mapY += this.moveSpeedY
+            map.style.marginTop = -window.gl.mapY +"px"
+          }  
+          if(this.positionY - window.gl.mapY < 100){   //往上走
+            window.gl.mapY -= this.moveSpeedY
+            map.style.marginTop = -window.gl.mapY +"px"
+          }
         },
         get: function(){
           return this._positionY;
@@ -181,7 +233,6 @@ roleCreate.prototype = {
         }
       }
     })
-    console.log(limitArr)
     if(limitArr.indexOf(type)>-1) return;
     switch(type){
       case 'up':
@@ -298,17 +349,27 @@ roleCreate.prototype = {
 // 全局构造函数
 function globalCreate(initObj){
   //全局限制区域
-  this.limitArea = initObj.limitArea;    
+  this.limitArea = initObj.limitArea;  
+  this.entrance = initObj.entrance;  
+  this.mapX = 0;
+  this.mapY = 0;
   this.init();   
 }
 //全局原型
 globalCreate.prototype = {
   init: function(){
+    //渲染入口区域
+    this.entrance.forEach(item => {
+      let enter_area = document.createElement('div');
+      enter_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
+      document.getElementById('map').append(enter_area)
+    })
     //渲染限制区域
     this.limitArea.forEach(item => {
       let limit_area = document.createElement('div')
       limit_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
       document.getElementById('map').append(limit_area)
     })
+    
   }
 }

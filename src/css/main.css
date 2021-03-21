@@ -1,0 +1,166 @@
+
+body {
+  padding: 0;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  background-color: aquamarine;
+  position: relative;
+}
+.loading{ 
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  color: #fff;
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+}
+.loadingCss{
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.loadingCss .loadingCtx {
+  animation: loadingCtx 3s infinite ;
+  -moz-animation: loadingCtx 3s infinite;	/* Firefox */
+  -webkit-animation: loadingCtx 3s infinite;	/* Safari 和 Chrome */
+  -o-animation: loadingCtx 3s infinite;	/* Opera */
+  white-space:nowrap;
+  overflow: hidden;
+}
+@keyframes loadingCtx
+  {
+  0%   {width: 48px;}
+  25%  {width:52px;}
+  50%  {width: 56px;}
+  100% {width: 62px;}
+  }
+  
+  @-moz-keyframes loadingCtx /* Firefox */
+  {
+    0%   {width: 48px;}
+  25%  {width:52px;}
+  50%  {width: 56px;}
+  100% {width: 62px;}
+  }
+  
+  @-webkit-keyframes loadingCtx /* Safari 和 Chrome */
+  {
+    0%   {width: 48px;}
+  25%  {width:52px;}
+  50%  {width: 56px;}
+  100% {width: 62px;}
+  }
+  
+  @-o-keyframes loadingCtx /* Opera */
+  {
+    0%   {width: 48px;}
+  25%  {width:52px;}
+  50%  {width: 56px;}
+  100% {width: 62px;}
+  }
+.mapBox {
+  margin-left: 50px;
+  margin-top: 20px;    
+  width: 800px;
+  height: 600px;
+  border: 1px solid #000;
+  overflow: hidden;
+}
+.map{
+  position: relative;
+}
+.map .chatInputBox {
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+}
+
+.chatInputBox{
+  display: none;
+  position: relative;
+  width: 800px;
+  margin: -140px 0 0 60px;
+}
+.chatInputBox .inputTextarea{
+  width: 754px;
+  resize: none;
+  background-color:#000;
+  color: #eee;
+  font-weight: 600;
+  padding: 10px;
+  letter-spacing: 1px;
+}
+.chatInputBox .sendMsg{
+  position: absolute;
+  bottom: 10px;
+  right: 40px;
+}
+.chatInputBox .chatInputTip{
+  position: absolute;
+  top: -20px;
+  left: 0;
+  height: 20px;
+  background-color: #f6f6f6;
+  padding:2px 10px;
+  font-size: 12px;
+  box-sizing: border-box;
+  color: #363636;
+}
+.dialogRight:before{
+  position: absolute;
+  content: '';
+  left: -8px;
+  top: 7.5px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 7px solid #000;
+}
+.dialogRight:after{
+  position: absolute;
+  content: '';
+  left: -7px;
+  top: 7.5px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 7px solid #fff;
+}
+.dialogLeft:before{
+  position: absolute;
+  content: '';
+  right: -8px;
+  top: 7.5px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 7px solid #000;
+}
+.dialogLeft:after{
+  position: absolute;
+  content: '';
+  right: -7px;
+  top: 7.5px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 7px solid #fff;
+}
+.dialogDown:before{
+  position: absolute;
+  content: '';
+  top: -8px;
+  left: 7.5px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 7px solid #000;
+}
+.dialogDown:after{
+  position: absolute;
+  content: '';
+  top: -7px;
+  left: 7.5px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 7px solid #fff;
+}
