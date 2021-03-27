@@ -1,5 +1,5 @@
 let config = {
-    local: 'http://127.0.0.1:7001'
+    local: 'http://127.0.0.1:7002'
 }
 window.onload = function(){
     let account = document.getElementById('account')
@@ -71,15 +71,31 @@ window.onload = function(){
                     pwd: pwd.value.trim(),
                 })
             })).json();
-            console.log(res)
             //登录成功，保存用户凭证
             if(res.status === 10001){
                 sessionStorage.setItem('userCreds', res.creds)
+                sessionStorage.setItem('roleId', 1)  //先测试写死角色id
+                ctxTip({
+                    type: 'success',
+                    ctx: '登录成功！'
+                })
                 //跳转到游戏页面
-                window.location = './main.html'    
+                setTimeout(()=> {
+                    window.location = './main.html'    
+                },800)
+            }else if(res.status === 20001){ //密码错误
+                ctxTip({
+                    type: "error",
+                    ctx: res.message,
+                })                
+            }else{
+                ctxTip({
+                    type: "error",
+                    ctx: '登录失败!',
+                })
             }
         }catch(err){
-            console.log("出发",err)
+            console.log("错误：",err)
         }
 
     },false)

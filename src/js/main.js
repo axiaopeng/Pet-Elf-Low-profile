@@ -39,36 +39,43 @@ window.onload = async function(){
     }]
   }
   this.gl = new globalCreate(globalConfig)
+  this.glUsers = {};
   //初始化 当前用户 人物数据 
-  let myself = initMyself(); //目前未返回对象
-  let newRole2 = {
-    name: '傻密',
-    positionX: 150,
-    positionY: 250
-  }
-  //生成其他角色
-  new roleCreate(newRole2)
-  let moveControl = true  //控制移动频率
-
-
+  initMyself(); //目前未返回对象
 
   //初始化 当前用户 人物数据、人物事件 ,先决条件 globalConfig.limitArea 存在 
   async function initMyself(){
-    let myself = null; 
     let res = await Fetch({
       url: '/user/myself',
       method: 'POST',
       body:{
-        userCreds: sessionStorage.getItem('userCreds')
+        userCreds: sessionStorage.getItem('userCreds'),
+        roleId: sessionStorage.getItem('roleId'),
       }
     })
     if(res.status === 10002){
-      myself = new roleCreate({
+      this.glUsers.myself = new roleCreate({
         ...res.data,
         limitArea: globalConfig.limitArea.map(item => item.area)  //可以每个地图重新赋值,减少编译器压力
       })
+      //地图定位当前位置
+      window.gl.mapX = this.glUsers.myself.positionX - 200;
+      document.getElementById('map').style.marginLeft = -window.gl.mapX +"px"
+      window.gl.mapY = this.glUsers.myself.positionY -100;
+      document.getElementById('map').style.marginTop = -window.gl.mapY +"px"
+      
+      this.glUsers.myself.initSocket();
+    }else{
+      ctxTip({
+        type: 'error',
+        ctx: '获取角色信息失败，请重新登录！'
+      })
+      setTimeout(() => {
+        window.location = './login.html'
+      }, 1000)
     }
 
+    let moveControl = true  //控制移动频率
     //当前人物键盘按下事件keydown初始化
     window.addEventListener('keydown',function(e){ 
       //对话输入框 
@@ -76,19 +83,19 @@ window.onload = async function(){
       //控制人物模块监听， 使用了 key 37、38、39、40
       if(moveControl){
         moveControl = false
-        this.setTimeout(() => {
+        setTimeout(() => {
           switch(e.keyCode){
             case 37:
-              myself.move('left')
+              glUsers.myself.move('left')
               break; 
             case 38:
-              myself.move('up')
+              glUsers.myself.move('up')
               break;
             case 39:
-              myself.move('right')
+              glUsers.myself.move('right')
               break;
             case 40:
-              myself.move('down')
+              glUsers.myself.move('down')
               break;              
           }
           moveControl = true
@@ -96,23 +103,55 @@ window.onload = async function(){
       }
       //控制对话框  Ctrl + Enter   
       if(13 === e.keyCode && e.ctrlKey){
-        myself.status = 1;   //开启对话状态
+        glUsers.myself.status = 1;   //开启对话状态
         box.style.display = 'block';
         box.children[0].focus();
       }
       // 按ESC
       if(27 === e.keyCode){
-        myself.status = 0; //恢复普通状态
+        glUsers.myself.status = 0; //恢复普通状态
         box.style.display = 'none'
       }
       //发送信息   shift+enter
       if(13 === e.keyCode && e.shiftKey){
-        myself.dialogBox();
+        glUsers.myself.ws.emit('dialogBoxMessage',{
+          message: document.getElementById('inputTextarea').value
+        })
+        glUsers.myself.dialogBox(document.getElementById('inputTextarea').value);
       }
     })
-
-    return myself
+    //监听进度保存事件按钮, 只更新坐标
+    document.querySelector('#saveProg').addEventListener('click',async () => {
+      let res = await Fetch({
+        url: '/user/updateMyself',
+        method: 'POST',
+        body: {
+          userCreds: sessionStorage.getItem('userCreds'),
+          roleId: sessionStorage.getItem('roleId'),
+          positionX: glUsers.myself.positionX,
+          positionY: glUsers.myself.positionY,
+        },
+        // loading: true,
+      })
+      if(res.status === 10003){
+        glUsers.myself.ws.emit('quit')
+        ctxTip({
+          type: 'success',
+          ctx: '保存成功，即将退出！'
+        })
+        setTimeout(() => {
+          window.location = './login.html'
+        },2000)
+      }
+    })
+    //监听页面因为外部元素导致页面关闭 消失 触发退出事件
+    window.onbeforeunload = function(event) {
+      glUsers.myself.ws.emit('quit')
+    };
+    return glUsers.myself
   }
+
+
 }
 
 //角色构造函数
@@ -140,7 +179,7 @@ roleCreate.prototype = {
     let map =  document.getElementById('map')
     map.append(this.role);
 
-    //默认参数
+    //默认参数 ，需要判断是自己还是其他人， 不需要给其他人一些不需要的资源
        //默认角色状态0为普通状态， 1为对话状态 ，
     this.status = 0  
        //默认角色坐标Y轴
@@ -149,62 +188,149 @@ roleCreate.prototype = {
     this._positionX = parseInt(this.role.style.left.substr(0, this.role.style.left.length - 2));
     this.moveSpeedX = 12     //精灵图X轴移动间距
     this.moveSpeedY = 8      //精灵图Y轴移动间距
-    this.lastMove = 'down'   //第一次默认上次触发
+    this.lastMove = 'down'   //移动方向 默认 down
     this.moveNum = 0         //第一次默认触发次数
     //监听角色坐标 关联到 下副地图入口
     Object.defineProperties(this,{   
-      'positionX':{
-        configurable:true,//属性可配置
-        set: function(v){
-          this._positionX = v;
-         //在这里进行页面跳转
-          window.gl.entrance.some(item => {
-            if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
-              document.querySelector('#loading').style.display= 'block'
+       'positionX':{
+         configurable:true,//属性可配置
+         set: function(v){
+           if(this.positionX -v<0){
+             this.lastMove = 'right' 
+           }else if(this.positionX -v>0){
+             this.lastMove = 'left'
+           }
+           this._positionX = v;
+           if(this.limitArea.length){
+            //在这里进行页面跳转
+             window.gl.entrance.some(item => {
+             if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
+               document.querySelector('#loading').style.display= 'block'
+             }
+             })
+            // 在这里进行地图移动X
+             if(this.positionX-window.gl.mapX > 700){  //往右走
+             window.gl.mapX += this.moveSpeedX
+             map.style.marginLeft = -window.gl.mapX +"px"
+             }  
+             if(this.positionX - window.gl.mapX < 100){   //往左走
+             window.gl.mapX -= this.moveSpeedX
+             map.style.marginLeft = -window.gl.mapX +"px"
+             }
+             //在这里关联socket
+             this.ws.emit('behavior',{
+               positionX: v
+             })          
+           }
+         },
+         get: function(){
+           return this._positionX;
+         }
+       },
+       "positionY":{
+         configurable:true,//属性可配置
+         set: function(v){
+           if(this.positionY - v>0){
+             this.lastMove = 'up' 
+           }else if(this.positionY - v<0){
+             this.lastMove = 'down'
+           }
+           this._positionY = v;
+           if(this.limitArea.length){
+             //在这里进行页面跳转
+             window.gl.entrance.some(item => {
+             if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
+               document.querySelector('#loading').style.display= 'block'
+             }
+             })
+             // 在这里进行地图移动
+             if(this.positionY-window.gl.mapY>500){  //往下走
+             window.gl.mapY += this.moveSpeedY
+             map.style.marginTop = -window.gl.mapY +"px"
+             }  
+             if(this.positionY - window.gl.mapY < 100){   //往上走
+             window.gl.mapY -= this.moveSpeedY
+             map.style.marginTop = -window.gl.mapY +"px"
+             }
+             //在这里关联socket
+             this.ws.emit('behavior',{
+               positionY: v
+             })          
+           }
+         },
+         get: function(){
+           return this._positionY;
+         }
+       },
+    }) 
+  },
+  //初始化gl-socket
+  initSocket: function(){
+      //即时连接 联机关键 this.ws
+      this.ws = io('ws://127.0.0.1:7001/glSocket',{query: {
+        userCreds: sessionStorage.getItem('userCreds'),
+        X: this.positionX,
+        Y: this.positionY,
+      }})
+      // 渲染范围内其他人 初始化   +-1000 内的其他人
+      this.ws.on('init',async (res) => {
+        if(res.others&&res.others.length){
+          await this.ws.emit('initInOther') //用个很奇怪的方式触发其他人初始化 我
+
+          let glUsers2 = {}
+          res.others.forEach(item => {
+            if(glUsers[item.id]){
+              document.getElementById('map').removeChild(glUsers[item.id].role)  //html中移除DOM元素
             }
+            glUsers2[item.id] = new roleCreate({
+              name: item.role_name,
+              positionX: item.position_x,
+              positionY: item.position_y,
+            })
           })
-         // 在这里进行地图移动X
-          if(this.positionX-window.gl.mapX > 700){  //往右走
-            window.gl.mapX += this.moveSpeedX
-            map.style.marginLeft = -window.gl.mapX +"px"
-          }  
-          if(this.positionX - window.gl.mapX < 100){   //往左走
-            window.gl.mapX -= this.moveSpeedX
-            map.style.marginLeft = -window.gl.mapX +"px"
+          glUsers = {                       //每次重连之前只留自己
+            myself: glUsers.myself,
+            ...glUsers2
           }
-        },
-        get: function(){
-          return this._positionX;
+
         }
-      },
-      "positionY":{
-        configurable:true,//属性可配置
-        set: function(v){
-          this._positionY = v;
-        //在这里进行页面跳转
-          window.gl.entrance.some(item => {
-            if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
-              document.querySelector('#loading').style.display= 'block'
-            }
-          })
-        // 在这里进行地图移动
-          if(this.positionY-window.gl.mapY>500){  //往下走
-            window.gl.mapY += this.moveSpeedY
-            map.style.marginTop = -window.gl.mapY +"px"
-          }  
-          if(this.positionY - window.gl.mapY < 100){   //往上走
-            window.gl.mapY -= this.moveSpeedY
-            map.style.marginTop = -window.gl.mapY +"px"
-          }
-        },
-        get: function(){
-          return this._positionY;
+      })
+      //其他人进入 初始化 他
+      this.ws.on('otherEnter', (res) => {
+        if(glUsers[res.id]){
+          document.getElementById('map').removeChild(glUsers[res.id].role)  //html中移除DOM元素
         }
-      },
-    })
+        glUsers[res.id] = new roleCreate({
+          name: res.role_name,
+          positionX: res.position_x,
+          positionY: res.position_y,
+        })
+      })
+      //其他人退出 删除 他
+      this.ws.on('otherQuit',(res) => {
+        document.getElementById('map').removeChild(glUsers[res.roleid].role)  //html中移除DOM元素
+        delete glUsers[res.roleid]                                            //js中删除对应的角色对象
+      })
+
+      this.ws.on('behavior', res => {
+        glUsers[res.id].positionX = res.position_x
+        glUsers[res.id].positionY = res.position_y
+        glUsers[res.id].move(glUsers[res.id].lastMove,'fromDefine')
+      })
+      this.ws.on('dialogBoxMessage', res => {
+        console.log(glUsers[res.roleid])
+        console.log('test', res)
+        glUsers[res.roleid].dialogBox(res.message)
+      })
+      this.ws.on('disconnect',res => {
+        console.log('socket连接中断',res)
+      })
+      this.ws.on('error', err => { 
+        console.log('socket连接中发送错误',error)
+      })
   },
   // 移动
-  move:function(type){
+  move:function(type,way){
     //判断角色状态
     if(this.status!=0) return
     //判断角色可以移动方向
@@ -216,7 +342,7 @@ roleCreate.prototype = {
           //不能往上
           limitArr.push('up')
         }
-        if(this.positionY<(item[1]-42)&&this.positionY-(item[1]-42)>-this.moveSpeedY){
+        if(this.positionY<=(item[1]-42)&&this.positionY-(item[1]-42)>=-this.moveSpeedY){
           //不能往下
           limitArr.push('down')
         }
@@ -244,7 +370,9 @@ roleCreate.prototype = {
         this.role.style.backgroundPosition = `${this.moveNum*-48}px -150px`
         //移动动画结束
         //位移逻辑开始
-        this.positionY -= this.moveSpeedY
+        if(!way){
+          this.positionY -= this.moveSpeedY
+        }
         this.role.style.top = this.positionY +'px'
         //位移逻辑结束
         this.moveNum++;
@@ -257,11 +385,14 @@ roleCreate.prototype = {
           this.lastMove = 'right'
           this.moveNum = 0;
         }  
+
         //移动动画开始 
         this.role.style.backgroundPosition = `${this.moveNum*-48}px -100px`
         //移动动画结束
         //位移逻辑开始
-        this.positionX += this.moveSpeedX
+        if(!way){
+          this.positionX += this.moveSpeedX
+        }
         this.role.style.left = this.positionX  +'px'
         //位移逻辑结束
         this.moveNum++;
@@ -274,11 +405,14 @@ roleCreate.prototype = {
           this.lastMove = 'down'
           this.moveNum = 0;
         }   
+
         //移动动画开始
         this.role.style.backgroundPosition = `${this.moveNum*-48}px 0`
         //移动动画结束
         //位移逻辑开始
-        this.positionY += this.moveSpeedY
+        if(!way){
+          this.positionY += this.moveSpeedY
+        }
         this.role.style.top = this.positionY +'px'
         //位移逻辑结束
         this.moveNum++;
@@ -291,11 +425,14 @@ roleCreate.prototype = {
           this.lastMove = 'left'
           this.moveNum = 0;
         }   
+
         //移动动画结束
         this.role.style.backgroundPosition = `${this.moveNum*-48}px -50px`
         //移动动画结束
         //位移逻辑开始
-        this.positionX -= this.moveSpeedX
+        if(!way){
+          this.positionX -= this.moveSpeedX
+        }
         this.role.style.left = this.positionX +'px'
         //位移逻辑结束
         this.moveNum++;
@@ -306,10 +443,9 @@ roleCreate.prototype = {
     }
   },
   // 言语框
-  dialogBox:function(){
-    if(this.status != 1) return;
+  dialogBox:function(allText){
+    if(this.status != 1&&this.limitArea.length) return;
     let dialog = document.createElement('div');
-    allText = document.getElementById('inputTextarea').value;
     let i=0,timer=null;
     switch(this.lastMove){
       case 'down':
@@ -370,6 +506,6 @@ globalCreate.prototype = {
       limit_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
       document.getElementById('map').append(limit_area)
     })
-    
+    //
   }
 }

@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>低配版宠物小精灵</title>
   <link rel="stylesheet" href="./css/main.css">
   <!-- 请求封装 -->
   <script src="./js/fetch.js"></script>
+  <!-- 工具函数 -->
+  <script src="./js/tools.js"></script>
+
 </head>
 <body>
   <div class='mapBox'>
     <div id='map' class="map">
     </div> 
+  </div>
+  <div id="saveProg" class="exit">
+    退出保存
   </div>
   <div id="chatInputBox" class="chatInputBox">
     <textarea id='inputTextarea' class="inputTextarea" rows="8" ></textarea>
@@ -23,6 +29,22 @@
       <div class="loadingCtx">加载中...</div>
     </div>
   </div>
+  <!-- 请求中动画 -->
+  <div id="reqLoad" class="reqLoad">
+    <div class="sk-cube-grid">
+      <div class="sk-cube sk-cube1"></div>
+      <div class="sk-cube sk-cube2"></div>
+      <div class="sk-cube sk-cube3"></div>
+      <div class="sk-cube sk-cube4"></div>
+      <div class="sk-cube sk-cube5"></div>
+      <div class="sk-cube sk-cube6"></div>
+      <div class="sk-cube sk-cube7"></div>
+      <div class="sk-cube sk-cube8"></div>
+      <div class="sk-cube sk-cube9"></div>
+    </div>
+    <div class="font">正在加载中</div>
+  </div>
+<script src="./js/socket.io.js"></script>
 <script src="./js/main.js"></script>
 </body>
 </html>
