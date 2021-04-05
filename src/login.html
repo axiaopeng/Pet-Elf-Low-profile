@@ -13,7 +13,7 @@
         <div class="imgBg">
             <img  src="./roleImg/login.jpg" alt="">
         </div>
-        <div class="loginForm">
+        <div id="loginForm" class="loginForm">
             <div class="welcome">皮卡皮卡~</div>
            <div class="form_item">
             账号 <input id='account' class="account" type="text">
@@ -22,8 +22,46 @@
             密码 <input id='pwd' class="pwd" type="password">
            </div>
            <div class="btn">
-            <div id="login_btn" class="login_btn">登录</div>
+               <div id="login_btn" class="login_btn">登录</div>
+               <div id="register_btn" class="login_btn">注册</div>
            </div>
+        </div>
+        <div id="registerForm" class="loginForm" style='display: none'>
+            <div class="welcome">皮卡皮卡~注册</div>
+           <div class="form_item">
+            登录账号 <input id='reg_account' placeholder="请输入正确的手机号" class="account" type="text">
+           </div>
+           <div class="form_item">
+            登录密码 <input id='reg_pwd' placeholder="密码必须包含字母、数字" class="pwd" type="password">
+           </div>
+           <div class="form_item">
+            确认密码 <input id='review_pwd'  placeholder="请再次输入密码" class="pwd" type="password">
+           </div>
+           <div class="btn">
+               <div id="reg_btn" class="login_btn">注册</div>
+               <div id="return_btn" class="login_btn">返回登录</div>
+           </div>
+        </div>
+    </div>
+    <div id="chooseBoxO" class="chooseBoxO">
+        <div  id="chooseBoxI" class="chooseBoxI">
+            <div class="roleCards">
+                <div id="addRole" class="addRole">
+                    <div >+</div>
+                </div>
+            </div>
+            <div id="enterGame" class="enterGame">进入游戏</div>
+        </div>
+        <div id="chooseRole" class="chooseRole">
+            <div  class="close">X</div>
+            <div  class="leftBtn">&lt</div>
+            <div class="centerCtx">
+                <div class="roleImg"></div>
+                <div class="roleName">蚊香泳士</div>
+                <div class="userName">角色名称：<input placeholder="推荐中文，不超过7个字" id="roleNameInp" class="roleNameInp" maxlength="7" type="text"></div>
+                <div id="createRole" class="enterGame">创建角色</div>
+            </div>
+            <div class="rightBtn">&gt</div>
         </div>
     </div>
     <script src="./js/login.js"></script>
