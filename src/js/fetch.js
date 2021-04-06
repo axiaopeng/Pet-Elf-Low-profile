@@ -1,15 +1,10 @@
-//在此定义IP地址
-let config = {
-    local: 'http://127.0.0.1:7002'
-}
-
 //该项目采用fetch为唯一请求手段
 async function Fetch(obj){
     //如果参数中没有returnWay字段,统一返回json格式数据
     if(obj.loading){
         document.querySelector('#reqLoad').style.width = '100vw'
     }
-    let Url = config.local+obj.url;
+    let Url = config.localInit+obj.url;
     let res = null;
     if(!obj.returnWay){
         res = await(await fetch(Url,{

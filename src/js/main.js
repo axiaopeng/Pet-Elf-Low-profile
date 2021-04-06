@@ -267,7 +267,7 @@ roleCreate.prototype = {
   //初始化gl-socket
   initSocket: function(){
       //即时连接 联机关键 this.ws
-      this.ws = io('ws://127.0.0.1:7001/glSocket',{query: {
+      this.ws = io(`ws://${config.localSocket.split('http://')[1]}/glSocket`,{query: {
         userCreds: sessionStorage.getItem('userCreds'),
         X: this.positionX,
         Y: this.positionY,

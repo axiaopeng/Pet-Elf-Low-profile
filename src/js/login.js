@@ -1,6 +1,3 @@
-let config = {
-    local: 'http://127.0.0.1:7002'
-}
 window.onload = function(){
     let account = document.getElementById('account');
     let pwd = document.getElementById('pwd');
@@ -104,7 +101,7 @@ window.onload = function(){
         try{
             check(account,'account')
             check(pwd, 'pwd')
-            let res = await (await fetch(config.local+'/login',{
+            let res = await (await fetch(config.localInit+'/login',{
                 method: "POST",
 			    headers:{ 'Content-Type': 'application/json' },
                 mode:'cors',
@@ -207,7 +204,7 @@ window.onload = function(){
             }
             check(document.getElementById('reg_account'),'account')
             check(document.getElementById('reg_pwd'), 'pwd')
-            let res = await (await fetch(config.local+'/register',{
+            let res = await (await fetch(config.localInit+'/register',{
                 method: "POST",
 			    headers:{ 'Content-Type': 'application/json' },
                 mode:'cors',
@@ -295,7 +292,7 @@ window.onload = function(){
             })
             return 
         }
-        let res = await (await fetch(config.local+'/user/createRole',{
+        let res = await (await fetch(config.localInit+'/user/createRole',{
             method: "POST",
             headers:{ 'Content-Type': 'application/json' },
             mode:'cors',
