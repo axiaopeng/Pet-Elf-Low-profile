@@ -129,7 +129,7 @@ window.onload = function(){
                 //将角色渲染进去
                 if(res.roles.length){
                     res.roles.forEach(item => {
-                        showRole(item,res)
+                        showRole(item,{type:1,...res})
                     });
                 }
             }else if(res.status === 20001){ //密码错误
@@ -152,7 +152,7 @@ window.onload = function(){
     function showRole(item,res){
         let role = document.createElement('div')
         role.id = 'roleid-' + item.id;
-        if(res&&item.id === res.lastRoleId){
+        if(res&&res.lastRoleId&&item.id === res.lastRoleId){
             sessionStorage.setItem('roleId', item.id)  //首次角色id赋值，预防没有选择角色情况
             role.className = 'roleCard active';
         }else{
@@ -167,10 +167,19 @@ window.onload = function(){
         document.getElementsByClassName('roleCards')[0].insertBefore(role, document.getElementById('addRole'))
         //监听选中角色事件
         role.addEventListener('click', function(e){
-            document.getElementsByClassName('active')[0].className = 'roleCard';
+            if(document.getElementsByClassName('active').length){
+                document.getElementsByClassName('active')[0].className = 'roleCard';
+            }
             this.className = 'roleCard active';
             sessionStorage.setItem('roleId', this.id.split('-')[1])  //选中时重新存储角色id
         },false)
+        if(res&&res.type===2){
+            if(document.getElementsByClassName('active').length){
+                document.getElementsByClassName('active')[0].className = 'roleCard';
+            }
+            role.className = 'roleCard active';
+            sessionStorage.setItem('roleId', item.id)  //选中时重新存储角色id
+        }
     } 
     //监听进入游戏按钮
     document.getElementById('enterGame').addEventListener('click',()=> {
@@ -312,7 +321,7 @@ window.onload = function(){
                 type: 'success',
                 ctx: '创建成功！'
             })
-            showRole(res.data)
+            showRole(res.data,{type:2})
             document.getElementById('chooseRole').style.visibility='hidden';
             document.getElementById('roleNameInp').value = "";
 
