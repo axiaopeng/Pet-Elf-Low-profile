@@ -150,6 +150,7 @@ window.onload = function(){
     },false)
     //显示可选角色函数
     function showRole(item,res){
+        console.log(item)
         let role = document.createElement('div')
         role.id = 'roleid-' + item.id;
         if(res&&res.lastRoleId&&item.id === res.lastRoleId){
@@ -161,7 +162,7 @@ window.onload = function(){
         role.innerHTML = `
             <div class="roleImg"></div>
             <div class="roleName"></div>`
-        role.getElementsByClassName('roleImg')[0].style.background = `url(./roleImg/${parseInt(Math.ceil(Math.random()*7))}.png) no-repeat`;
+        role.getElementsByClassName('roleImg')[0].style.background = `url(./roleImg/${item.role_type}.png) no-repeat`;
         role.getElementsByClassName('roleImg')[0].style.backgroundSize = '384px auto';
         role.getElementsByClassName('roleName')[0].innerText = item.role_name;
         document.getElementsByClassName('roleCards')[0].insertBefore(role, document.getElementById('addRole'))

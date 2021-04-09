@@ -30,13 +30,18 @@ window.onload = async function(){
       area: [ 150, 400, 200, 80],
       backgroundColor: "#e3e3e3"
     }],
-    entrance: [{
+    entrance: [{                    //type: 1:地图位置转移  2:电影院
       area: [540,100,60,50],
       backgroundColor: '#000',
+      type: 1, 
     },{
       area: [1000,600,50,50],
       backgroundColor: '#eee',
-    }]
+      type: 1,
+    },{
+      area: [270,-30,120,70],
+      type: 2,
+    }],
   }
   this.gl = new globalCreate(globalConfig)
   this.glUsers = {};
@@ -54,7 +59,7 @@ window.onload = async function(){
       }
     })
     if(res.status === 10002){
-      this.glUsers.myself = new roleCreate({
+      glUsers.myself = new roleCreate({
         ...res.data,
         limitArea: globalConfig.limitArea.map(item => item.area)  //可以每个地图重新赋值,减少编译器压力
       })
@@ -64,7 +69,7 @@ window.onload = async function(){
       window.gl.mapY = this.glUsers.myself.positionY -100;
       document.getElementById('map').style.marginTop = -window.gl.mapY +"px"
       
-      this.glUsers.myself.initSocket();
+      glUsers.myself.initSocket();
     }else{
       ctxTip({
         type: 'error',
@@ -156,7 +161,8 @@ window.onload = async function(){
 
 //角色构造函数
 function roleCreate(initObj){
-  this.name = initObj.name  //名称
+  this.name = initObj.name;  //名称
+  this.role_type = initObj.role_type;      //角色类型
   this.positionX = initObj.positionX || 0;  // 初始坐标X轴
   this.positionY = initObj.positionY || 0;  // 初始坐标Y轴
   this.limitArea = initObj.limitArea || [];
@@ -169,7 +175,7 @@ roleCreate.prototype = {
   //初始化
   init:function(){
     this.role = document.createElement('div')
-    this.role.style = `position: absolute;top:${this.positionY}px;left:${this.positionX}px;width:48px;height:42px; background:url(./roleImg/${parseInt(Math.ceil(Math.random()*7))}.png) no-repeat;background-position:0 0`
+    this.role.style = `position: absolute;top:${this.positionY}px;left:${this.positionX}px;width:48px;height:42px; background:url(./roleImg/${this.role_type}.png) no-repeat;background-position:0 0`
     let nameDiv = document.createElement('div')
     nameDiv.innerText = this.name
     nameDiv.style = `width: 80px;text-align: center;position:absolute;top:-15px;font-size: 12px;left:-16px`
@@ -202,7 +208,7 @@ roleCreate.prototype = {
            }
            this._positionX = v;
            if(this.limitArea.length){
-            //在这里进行页面跳转
+            //在这里进行场景切换    1.地图位置转移  2.进入电影院      
              window.gl.entrance.some(item => {
              if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
                document.querySelector('#loading').style.display= 'block'
@@ -239,9 +245,12 @@ roleCreate.prototype = {
            if(this.limitArea.length){
              //在这里进行页面跳转
              window.gl.entrance.some(item => {
-             if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
-               document.querySelector('#loading').style.display= 'block'
-             }
+               if(this.positionX>item.area[0]&&this.positionX<(item.area[0]+item.area[2]-32)&&this.positionY>item.area[1]&&this.positionY<(item.area[1]+item.area[3]-24)){
+                 gl.loadstart({positionX: item.area[0]+item.area[2]/2,positionY: item.area[1]+item.area[3]+10});
+                 setTimeout(() => {
+                   gl.loadend();
+                 },2000) 
+               }
              })
              // 在这里进行地图移动
              if(this.positionY-window.gl.mapY>500){  //往下走
@@ -283,6 +292,7 @@ roleCreate.prototype = {
               document.getElementById('map').removeChild(glUsers[item.id].role)  //html中移除DOM元素
             }
             glUsers2[item.id] = new roleCreate({
+              role_type: item.role_type,
               name: item.role_name,
               positionX: item.position_x,
               positionY: item.position_y,
@@ -318,8 +328,6 @@ roleCreate.prototype = {
         glUsers[res.id].move(glUsers[res.id].lastMove,'fromDefine')
       })
       this.ws.on('dialogBoxMessage', res => {
-        console.log(glUsers[res.roleid])
-        console.log('test', res)
         glUsers[res.roleid].dialogBox(res.message)
       })
       this.ws.on('disconnect',res => {
@@ -485,8 +493,11 @@ roleCreate.prototype = {
 // 全局构造函数
 function globalCreate(initObj){
   //全局限制区域
-  this.limitArea = initObj.limitArea;  
+  this.limitArea = initObj.limitArea;
+  //全局进入区域  
   this.entrance = initObj.entrance;  
+  //全局电影院
+  this.cinema = initObj.cinema;
   this.mapX = 0;
   this.mapY = 0;
   this.init();   
@@ -497,7 +508,17 @@ globalCreate.prototype = {
     //渲染入口区域
     this.entrance.forEach(item => {
       let enter_area = document.createElement('div');
-      enter_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
+      if(item.type === 1){
+        enter_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
+      }
+      switch(item.type){
+        case 1:             //下一地图入口
+          enter_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
+          break;
+        case 2:             //电影院
+          enter_area.style = `position: absolute;top: ${item.area[1]-70}px;left: ${item.area[0]-70}px;  width: ${item.area[2]+160}px; height: ${item.area[3]+130}px;background:url(./roleImg/cinema.png) no-repeat;background-position:0 0;background-size:${item.area[2]+160}px ${item.area[3]+130}px;` 
+          break;  
+      }
       document.getElementById('map').append(enter_area)
     })
     //渲染限制区域
@@ -506,6 +527,24 @@ globalCreate.prototype = {
       limit_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
       document.getElementById('map').append(limit_area)
     })
-    //
+    //渲染电影院区域
+    // this.cinema.forEach(item => {
+    //   let cinema_area = document.createElement('div');
+    //   cinema_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px;  width: ${item.area[2]}px; height: ${item.area[3]}px;background:url(./roleImg/cinema.png) no-repeat;background-position:0 0;background-size:${item.area[2]}px ${item.area[3]}px;`
+    //   document.getElementById('map').append(cinema_area)
+    // })
+  },
+  loadstart: function(obj){
+    document.querySelector('#loading').style.display= 'block'  
+    //使用定时器是防止与move事件发生冲突
+    setTimeout(() => {
+      glUsers.myself.positionX = obj.positionX;
+      glUsers.myself.positionY = obj.positionY; 
+      glUsers.myself.move('left','fromDefine')
+      glUsers.myself.move('down','fromDefine')
+    },1000)
+  },
+  loadend: function(){
+    document.querySelector('#loading').style.display= 'none'  
   }
 }
