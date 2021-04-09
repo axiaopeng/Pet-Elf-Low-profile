@@ -496,8 +496,6 @@ function globalCreate(initObj){
   this.limitArea = initObj.limitArea;
   //全局进入区域  
   this.entrance = initObj.entrance;  
-  //全局电影院
-  this.cinema = initObj.cinema;
   this.mapX = 0;
   this.mapY = 0;
   this.init();   
@@ -516,7 +514,7 @@ globalCreate.prototype = {
           enter_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
           break;
         case 2:             //电影院
-          enter_area.style = `position: absolute;top: ${item.area[1]-70}px;left: ${item.area[0]-70}px;  width: ${item.area[2]+160}px; height: ${item.area[3]+130}px;background:url(./roleImg/cinema.png) no-repeat;background-position:0 0;background-size:${item.area[2]+160}px ${item.area[3]+130}px;` 
+          enter_area.style = `position: absolute;top: ${item.area[1]-70}px;left: ${item.area[0]-70}px;  width: ${item.area[2]+160}px; height: ${item.area[3]+130}px;background:url(./roleImg/cinema.jpg) no-repeat;background-position:0 0;background-size:${item.area[2]+160}px ${item.area[3]+130}px;` 
           break;  
       }
       document.getElementById('map').append(enter_area)
@@ -527,12 +525,6 @@ globalCreate.prototype = {
       limit_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px; width: ${item.area[2]}px; height: ${item.area[3]}px;background-color: ${item.backgroundColor}`
       document.getElementById('map').append(limit_area)
     })
-    //渲染电影院区域
-    // this.cinema.forEach(item => {
-    //   let cinema_area = document.createElement('div');
-    //   cinema_area.style = `position: absolute;top: ${item.area[1]}px;left: ${item.area[0]}px;  width: ${item.area[2]}px; height: ${item.area[3]}px;background:url(./roleImg/cinema.png) no-repeat;background-position:0 0;background-size:${item.area[2]}px ${item.area[3]}px;`
-    //   document.getElementById('map').append(cinema_area)
-    // })
   },
   loadstart: function(obj){
     document.querySelector('#loading').style.display= 'block'  
